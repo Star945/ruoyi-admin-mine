@@ -26,7 +26,6 @@
         v-if="options.mutiSelect"
         type="selection"
         width="60"
-        label="序号"
         align="center"
       ></el-table-column>
       <el-table-column
@@ -151,9 +150,9 @@
         v-if="pagination"
         @size-change="handleSizeChange"
         @current-change="handleIndexChange"
-        :page-size="tableCurrentPagination.pageSize"
-        :page-sizes="tableCurrentPagination.pageArray || pageArray"
-        :current-page="tableCurrentPagination.pageNum"
+        :page-size.sync="pagination.pageSize"
+        :page-sizes="pagination.pageSizes || pageArray"
+        :current-page.sync="pagination.pageNum"
         layout="total,sizes, prev, pager, next,jumper"
         :total="total"
       ></el-pagination>
@@ -243,7 +242,6 @@ export default {
       height: 250,
       pageNum: 1,
       pageArray: _pageArray,
-      tableCurrentPagination: {},
       multipleSelection: [] // 多行选中
     }
   },
@@ -253,7 +251,7 @@ export default {
       if (this.noStatic) {
         return
       }
-      let staticHeight = window.innerHeight - this.$refs.mutipleTable.$el.offsetTop - 170
+      let staticHeight = window.innerHeight - this.$refs.mutipleTable.$el.offsetTop - this.otherHeight
       this.height = staticHeight < 250 ? 250 : staticHeight
 
       // 监听窗口大小变化
@@ -263,19 +261,12 @@ export default {
           return
         }
         debounce(() => {
-          let staticHeight = window.innerHeight - self.$refs.mutipleTable.$el.offsetTop - 170
+          let staticHeight = window.innerHeight - self.$refs.mutipleTable.$el.offsetTop - this.otherHeight
           self.height = staticHeight < 250 ? 250 : staticHeight
         }, 200)()
 
       }
     })
-    if (this.pagination && !this.pagination.pageSizes) {
-      // this.pagination.pageArray = _pageArray // 每页展示条数控制
-    }
-    this.tableCurrentPagination = this.pagination || {
-      pageSize: this.total,
-      currentPage: 1
-    } // 判断是否需要分页
   },
   computed: {
     // 计算table高度
@@ -310,18 +301,15 @@ export default {
     // 切换每页显示的数量
     handleSizeChange(size) {
       if (this.pagination) {
-        this.tableCurrentPagination = {
-          currentPage: 1,
-          pageSize: size
-        }
-        this.$emit("handleSizeChange", this.tableCurrentPagination)
+        this.$emit('pagination', { ...this.pagination })
+        this.$emit("handleSizeChange", { ...this.pagination })
       }
     },
     // 切换页码
     handleIndexChange(currnet) {
       if (this.pagination) {
-        this.tableCurrentPagination.currentPage = currnet
-        this.$emit("handleIndexChange", this.tableCurrentPagination)
+        this.$emit('pagination', { ...this.pagination })
+        this.$emit("handleIndexChange", { ...this.pagination })
       }
     },
     sortChange({ column, prop, order }) {

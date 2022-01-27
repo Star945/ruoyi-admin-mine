@@ -261,7 +261,7 @@ export default {
           return
         }
         debounce(() => {
-          let staticHeight = window.innerHeight - self.$refs.mutipleTable.$el.offsetTop - this.otherHeight
+          let staticHeight = window.innerHeight - self.$refs.mutipleTable.$el.offsetTop - self.otherHeight
           self.height = staticHeight < 250 ? 250 : staticHeight
         }, 200)()
 

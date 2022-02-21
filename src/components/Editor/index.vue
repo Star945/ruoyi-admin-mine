@@ -1,9 +1,10 @@
 <template>
   <div
     class="editor-box-wrapper"
+    :class="editorId"
     :style="{ height: (height || minHeight) + 66 + 'px' }"
   >
-    <div class="editor" ref="editor" :style="styles"></div>
+    <div class="editor" ref="editor" :id="editorId" :style="styles"></div>
     <el-upload
       class="avatar-uploader"
       :action="BaseHref + action"
@@ -25,7 +26,9 @@ import Quill from "quill"
 import "quill/dist/quill.core.css"
 import "quill/dist/quill.snow.css"
 import "quill/dist/quill.bubble.css"
-
+let sizes = ['10px', '12px', false, '16px', '20px', '24px', '36px']
+let Size = Quill.import("formats/size")
+Size.whitelist = sizes
 export default {
   name: "Editor",
   props: {
@@ -40,7 +43,7 @@ export default {
       default: () => {
         return {
           Accept: "application/json; charset=UTF-8",
-          Authorization: "Bearer " + getToken(),
+          // Authorization: "Bearer " + getToken(),
         }
       }
     },
@@ -50,6 +53,7 @@ export default {
       type: String,
       default: "",
     },
+    editorId: null,//一页又多个editor时 为必填不能重复
     lazy: false,
     /* 高度 */
     height: {
@@ -62,10 +66,10 @@ export default {
       default: 400,
     },
   },
-  data () {
+  data() {
     return {
-      BaseHref: process.env.NODE_ENV == 'production' ? process.env.VUE_APP_BASE_API : 'http://192.168.0.107:8082',
-      baseShowHref: process.env.NODE_ENV == 'production' ? process.env.VUE_APP_IMG_BASE_HREF : 'http://192.168.0.107:8082',
+      BaseHref: process.env.VUE_APP_BASE_API,
+      baseShowHref: process.env.VUE_APP_BASE_SHOWHREF,
       Quill: null,
       articleImgUrl: '',
       currentValue: "",
@@ -80,7 +84,8 @@ export default {
             ["blockquote", "code-block"],                    // 引用  代码块
             [{ list: "ordered" }, { list: "bullet" }],       // 有序、无序列表
             [{ indent: "-1" }, { indent: "+1" }],            // 缩进
-            [{ size: ["small", false, "large", "huge"] }],   // 字体大小
+            // [{ size: ["small", false, "large", "huge"] }],   // 字体大小
+            [{ size: sizes }],
             [{ header: [1, 2, 3, 4, 5, 6, false] }],         // 标题
             [{ color: [] }, { background: [] }],             // 字体颜色、字体背景颜色
             [{ align: [] }],                                 // 对齐方式
@@ -94,7 +99,7 @@ export default {
     }
   },
   computed: {
-    styles () {
+    styles() {
       let style = {}
       if (this.minHeight) {
         style.minHeight = `${this.minHeight}px`
@@ -107,7 +112,7 @@ export default {
   },
   watch: {
     value: {
-      handler (val) {
+      handler(val) {
         if (val !== this.currentValue) {
           this.currentValue = val === null ? "" : val
           if (this.Quill) {
@@ -118,23 +123,23 @@ export default {
       immediate: true,
     },
   },
-  mounted () {
+  mounted() {
     if (!this.lazy) {
       this.init()
     }
   },
-  beforeDestroy () {
+  beforeDestroy() {
     this.Quill = null
   },
   methods: {
-    uploadError () {
+    uploadError() {
       this.$message({
         type: "warning",
         message: err.message || "网络异常，请稍后再试",
         duration: 4000
       })
     },
-    beforeUpload (file) {
+    beforeUpload(file) {
       const imgAccept = ".jpg,.png," // 接受的图片格式类型
       let attachAccept =
         ".jpg,.jpeg,.png,.gif,.bmp,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.pdf" // 接受的附件格式类型
@@ -183,12 +188,14 @@ export default {
       }
       return (checked || isIMAGE) && isLimit
     },
-    uploadSuccess (res) {
+    uploadSuccess(res) {
       var dt = res
+      console.log(this.Quill)
       let quill = this.Quill
       // 如果上传成功
       if (dt.code === 200 && dt.url !== null) {
         // 获取光标所在位置
+        console.log(quill)
         let length = quill.getSelection().index
         // 插入图片  dt.url为服务器返回的图片地址
         quill.insertEmbed(length, 'image', this.baseShowHref + dt.fileName)
@@ -200,15 +207,25 @@ export default {
       // loading加载隐藏
       this.quillUpdateImg = false
     },
-    init () {
+    init() {
       const editor = this.$refs.editor
-      this.Quill = new Quill(editor, this.options)
+      let quillEditor = null
+      if (this.editorId) {
+        quillEditor = new Quill(`#${this.editorId}`, this.options)
+      } else {
+        quillEditor = new Quill(editor, this.options)
+      }
+      this.Quill = quillEditor
       let toolbar = this.Quill.getModule('toolbar')
+      let that = this
       toolbar.addHandler('image', (value) => {
         if (value) {
           // upload点击上传事件
-          console.log('inner')
-          document.querySelector('.avatar-uploader input').click()
+          if (that.editorId) {
+            document.querySelector(`.${that.editorId} .avatar-uploader input`).click()
+            return
+          }
+          document.querySelector(`.avatar-uploader input`).click()
         } else {
           this.Quill.format('image', false)
         }
@@ -258,11 +275,102 @@ export default {
   content: "请输入视频地址:";
 }
 
+/* 字号设置 */
+/* 默认字号 */
+/* ['10px', '12px', false, '16px', '20px', '24px', '36px'] */
 .ql-snow .ql-picker.ql-size .ql-picker-label::before,
 .ql-snow .ql-picker.ql-size .ql-picker-item::before {
   content: "14px";
 }
-.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="small"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="10px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="10px"]::before {
+  content: "10px";
+  font-size: 10px;
+}
+
+.ql-size-10px {
+  font-size: 10px;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="12px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12px"]::before {
+  content: "12px";
+  font-size: 12px;
+}
+
+.ql-size-12px {
+  font-size: 12px;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="16px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16px"]::before {
+  content: "16px";
+  font-size: 16px;
+}
+
+.ql-size-16px {
+  font-size: 16px;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="18px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18px"]::before {
+  content: "18px";
+  font-size: 18px;
+}
+
+.ql-size-18px {
+  font-size: 18px;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="20px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="20px"]::before {
+  content: "20px";
+  font-size: 20px;
+}
+
+.ql-size-20px {
+  font-size: 20px;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="24px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="24px"]::before {
+  content: "24px";
+  font-size: 24px;
+}
+
+.ql-size-24px {
+  font-size: 24px;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="26px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="26px"]::before {
+  content: "26px";
+  font-size: 26px;
+}
+
+.ql-size-26px {
+  font-size: 26px;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="28px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="28px"]::before {
+  content: "28px";
+  font-size: 28px;
+}
+
+.ql-size-28px {
+  font-size: 28px;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="36px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="36px"]::before {
+  content: "36px";
+  font-size: 36px;
+}
+
+.ql-size-36px {
+  font-size: 36px;
+}
+/* .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="small"]::before,
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="small"]::before {
   content: "10px";
 }
@@ -274,6 +382,10 @@ export default {
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="huge"]::before {
   content: "32px";
 }
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="super"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="super"]::before {
+  content: "100px";
+} */
 
 .ql-snow .ql-picker.ql-header .ql-picker-label::before,
 .ql-snow .ql-picker.ql-header .ql-picker-item::before {

@@ -1,0 +1,18 @@
+.el-form-renderer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    flex-grow: 0;
+    // gap: 0 calc(4% / 3);
+    // justify-content: space-between;
+    ::v-deep .el-form-item {
+      display: flex;
+      flex-shrink: 0;
+      flex-grow: 0;
+      .el-form-item__content {
+        flex: 1;
+        margin-left: 0 !important;
+      }
+    }
+  }

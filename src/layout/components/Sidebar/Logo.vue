@@ -1,13 +1,45 @@
 <template>
-  <div class="sidebar-logo-container" :class="{'collapse':collapse}" :style="{ backgroundColor: sideTheme === 'theme-dark' ? variables.menuBg : variables.menuLightBg }">
+  <div
+    class="sidebar-logo-container"
+    :class="{'collapse':collapse}"
+    :style="{ background:formatThemeClass('BackgroundColor','logo')}"
+  >
+    <!-- sideTheme === 'theme-dark' ? variables.menuBackground : variables.menuLightBackground -->
     <transition name="sidebarLogoFade">
-      <router-link v-if="collapse" key="collapse" class="sidebar-logo-link" to="/">
-        <img v-if="logo" :src="logo" class="sidebar-logo" />
-        <h1 v-else class="sidebar-title" :style="{ color: sideTheme === 'theme-dark' ? variables.sidebarTitle : variables.sidebarLightTitle }">{{ title }} </h1>
+      <router-link
+        v-if="collapse"
+        key="collapse"
+        class="sidebar-logo-link collapse"
+        to="/"
+      >
+        <img
+          v-if="logo"
+          :src="logo"
+          class="sidebar-logo"
+        >
+        <!-- <h1
+          v-else
+          class="sidebar-title"
+          :style="{ color:formatThemeClass('background','logo') }"
+        >{{ title }} </h1> -->
+        <!-- sideTheme === 'theme-dark' ? variables.logoTitleColor : variables.logoLightTitleColor -->
       </router-link>
-      <router-link v-else key="expand" class="sidebar-logo-link" to="/">
-        <img v-if="logo" :src="logo" class="sidebar-logo" />
-        <h1 class="sidebar-title" :style="{ color: sideTheme === 'theme-dark' ? variables.sidebarTitle : variables.sidebarLightTitle }">{{ title }} </h1>
+      <router-link
+        v-else
+        key="expand"
+        class="sidebar-logo-link"
+        to="/"
+      >
+        <img
+          v-if="logo"
+          :src="logo"
+          class="sidebar-logo"
+        >
+        <!-- <h1
+          class="sidebar-title"
+          :style="{ color: formatThemeClass('TitleColor','logo')}"
+        >{{ title }} </h1> -->
+        <!-- sideTheme === 'theme-dark' ? variables.logoTitleColor : variables.logoLightTitleColor  -->
       </router-link>
     </transition>
   </div>
@@ -25,18 +57,35 @@ export default {
       required: true
     }
   },
+  data() {
+    return {
+      title: 'TISC运维系统',
+      logo: logoImg
+    }
+  },
   computed: {
     variables() {
-      return variables;
+      return variables
     },
-	sideTheme() {
+    sideTheme() {
       return this.$store.state.settings.sideTheme
     }
   },
-  data() {
-    return {
-      title: '巴拉拉小魔仙管理后台',
-      logo: logoImg
+  methods: {
+    formatThemeClass(type, before) {
+      const unBefore = before || 'menu'
+      let theme = this.sideTheme || 'theme-dark'
+      const classType = this.titleCase(type)
+      theme = this.titleCase(theme.replace('theme-', ''))
+      if (theme === 'Dark') {
+        theme = ''
+      }
+      const scssClass = this.variables[`${unBefore}${theme}${classType}`]
+      return scssClass
+    },
+    titleCase(str) {
+      const newStr = str.slice(0, 1).toUpperCase() + str.slice(1)
+      return newStr
     }
   }
 }
@@ -55,19 +104,26 @@ export default {
 .sidebar-logo-container {
   position: relative;
   width: 100%;
-  height: 50px;
-  line-height: 50px;
+
   background: #2b2f3a;
   text-align: center;
   overflow: hidden;
 
   & .sidebar-logo-link {
-    height: 100%;
-    width: 100%;
-
+    height: 117px;
+    line-height: 117px;
+    &.collapse {
+      height: 50px;
+      line-height: 50px;
+      .sidebar-logo {
+        width: 32px;
+        height: 32px;
+        vertical-align: middle;
+      }
+    }
     & .sidebar-logo {
-      width: 32px;
-      height: 32px;
+      width: 106px;
+      height: 85px;
       vertical-align: middle;
       margin-right: 12px;
     }
